@@ -3,38 +3,31 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(page_title="Corretor de CSV", layout="centered")
+st.set_page_config(page_title="Conversor de Planilhas para CSV", layout="centered")
 
-st.title("🛠️ Corretor de Arquivos CSV para Streamlit")
+st.title("📄 Conversor de Planilhas Excel para CSV")
 
-st.write("""
-Este aplicativo corrige arquivos `.csv` que estão com formato ou codificação incorreta.
-Ele reescreve os arquivos com codificação UTF-8 e salva novamente como `.csv` legível para outros apps Streamlit.
-""")
+st.write("Este aplicativo permite enviar arquivos `.xls`, `.xlsx` ou `.csv` (separado por ponto e vírgula) e converte todos para `.csv` corrigido com codificação UTF-8 e separador vírgula.")
 
-uploaded_files = st.file_uploader("📁 Envie um ou mais arquivos CSV para corrigir:", accept_multiple_files=True, type=["csv"])
+uploaded_files = st.file_uploader("Envie suas planilhas", accept_multiple_files=True, type=['xls', 'xlsx', 'csv'])
 
 if uploaded_files:
     for file in uploaded_files:
-        st.markdown(f"### 🔍 Processando: `{file.name}`")
-
+        st.subheader(f"📥 Arquivo enviado: `{file.name}`")
         try:
-            # Lê usando Latin-1 para garantir compatibilidade
-            df = pd.read_csv(file, sep=';', encoding='latin1', engine='python')
+            if file.name.lower().endswith('.csv'):
+                df = pd.read_csv(file, sep=';', encoding='latin1')
+            else:
+                df = pd.read_excel(file)
 
-            # Cria buffer para salvar o arquivo corrigido
-            buffer = io.BytesIO()
-            df.to_csv(buffer, index=False, sep=';', encoding='utf-8-sig')
-            buffer.seek(0)
+            csv_buffer = io.StringIO()
+            df.to_csv(csv_buffer, index=False, encoding='utf-8', sep=',')
 
-            nome_corrigido = file.name.replace(" ", "_").replace(".CSV", "").replace(".csv", "") + "_corrigido.csv"
             st.download_button(
-                label="⬇️ Baixar arquivo corrigido",
-                data=buffer,
-                file_name=nome_corrigido,
+                label=f"⬇️ Baixar `{file.name.rsplit('.', 1)[0]}.csv`",
+                data=csv_buffer.getvalue(),
+                file_name=f"{file.name.rsplit('.', 1)[0]}.csv",
                 mime="text/csv"
             )
-            st.success(f"Arquivo `{nome_corrigido}` corrigido com sucesso!")
-
         except Exception as e:
-            st.error(f"Erro ao processar `{file.name}`: {e}")
+            st.error(f"Erro ao processar `{file.name}`: {str(e)}")
