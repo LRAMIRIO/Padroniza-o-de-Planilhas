@@ -1,28 +1,40 @@
 
 import streamlit as st
+import pandas as pd
+import io
 
-st.set_page_config(page_title="Corretor de CSV INMET", layout="centered")
+st.set_page_config(page_title="Corretor de CSV", layout="centered")
 
-st.title("🛠️ Correção de Arquivos CSV do INMET")
-st.write("Este aplicativo remove os ';' extras no cabeçalho dos arquivos CSV do INMET, facilitando sua leitura no Excel e em scripts automatizados.")
+st.title("🛠️ Corretor de Arquivos CSV para Streamlit")
 
-uploaded_files = st.file_uploader(
-    "📤 Envie um ou mais arquivos CSV para corrigir",
-    type="csv",
-    accept_multiple_files=True,
-    key="csv_corrigir"
-)
+st.write("""
+Este aplicativo corrige arquivos `.csv` que estão com formato ou codificação incorreta.
+Ele reescreve os arquivos com codificação UTF-8 e salva novamente como `.csv` legível para outros apps Streamlit.
+""")
+
+uploaded_files = st.file_uploader("📁 Envie um ou mais arquivos CSV para corrigir:", accept_multiple_files=True, type=["csv"])
 
 if uploaded_files:
-    for uploaded_file in uploaded_files:
-        lines = uploaded_file.getvalue().decode("latin1").splitlines()
-        corrected_lines = [line.rstrip(';') for line in lines[:8]] + lines[8:]
-        corrected_content = "\n".join(corrected_lines)
-        corrected_filename = "corrigido_" + uploaded_file.name
+    for file in uploaded_files:
+        st.markdown(f"### 🔍 Processando: `{file.name}`")
 
-        st.download_button(
-            label=f"📥 Baixar arquivo corrigido: {corrected_filename}",
-            data=corrected_content.encode("latin1"),
-            file_name=corrected_filename,
-            mime="text/csv"
-        )
+        try:
+            # Lê usando Latin-1 para garantir compatibilidade
+            df = pd.read_csv(file, sep=';', encoding='latin1', engine='python')
+
+            # Cria buffer para salvar o arquivo corrigido
+            buffer = io.BytesIO()
+            df.to_csv(buffer, index=False, sep=';', encoding='utf-8-sig')
+            buffer.seek(0)
+
+            nome_corrigido = file.name.replace(" ", "_").replace(".CSV", "").replace(".csv", "") + "_corrigido.csv"
+            st.download_button(
+                label="⬇️ Baixar arquivo corrigido",
+                data=buffer,
+                file_name=nome_corrigido,
+                mime="text/csv"
+            )
+            st.success(f"Arquivo `{nome_corrigido}` corrigido com sucesso!")
+
+        except Exception as e:
+            st.error(f"Erro ao processar `{file.name}`: {e}")
