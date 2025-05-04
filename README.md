@@ -1,14 +1,20 @@
+# Padronizador de Planilhas INMET
 
-# Corrigir Arquivos INMET para Formato Compatível com Streamlit
+Este aplicativo Streamlit permite carregar arquivos `.csv` ou `.xlsx` e converte-os para arquivos `.csv` padronizados com codificação UTF-8, separador `;` e vírgula substituída por ponto nas colunas numéricas.
 
-Este aplicativo permite:
-- Enviar arquivos INMET nos formatos `.csv`, `.CSV`, `.xls`, `.xlsx`
-- Corrigir problemas de codificação, vírgulas como separador decimal e salvar como `.csv` padrão
+## Funcionalidades:
+- Suporte a múltiplos arquivos.
+- Conversão automática de colunas numéricas com vírgula para ponto.
+- Geração de arquivos corrigidos prontos para uso.
+- Compatível com planilhas do INMET e outras planilhas similares.
 
-## Como rodar
-```bash
-streamlit run app.py
-```
+## Como utilizar:
+1. Faça upload de arquivos .csv ou .xlsx.
+2. Baixe os arquivos corrigidos individualmente em formato `.csv`.
 
-## Saída
-Um botão de download com o arquivo já corrigido.
+## Requisitos:
+- streamlit
+- pandas
+- openpyxl
+
+Ideal para pesquisadores, engenheiros ambientais e profissionais que lidam com dados meteorológicos.
