@@ -1,43 +1,39 @@
-
 import streamlit as st
 import pandas as pd
+from pathlib import Path
 import io
 
-st.title("🔧 Corrigir arquivos INMET para formato compatível")
+st.set_page_config(page_title="Padronizador de Planilhas INMET", layout="centered")
 
-uploaded_files = st.file_uploader(
-    "📂 Envie os arquivos INMET (qualquer formato)", accept_multiple_files=True
-)
+st.title("📄 Padronizador de Planilhas INMET")
+st.write("Esse aplicativo permite carregar arquivos do INMET (.csv, .xls, .xlsx), padronizar colunas e corrigir problemas de codificação.")
 
-if uploaded_files:
-    for uploaded_file in uploaded_files:
-        st.write(f"📥 Processando: {uploaded_file.name}")
+uploaded_file = st.file_uploader("🔼 Envie seu arquivo", type=["csv", "CSV", "xls", "xlsx"])
 
-        # Detecta se é CSV ou Excel
-        file_suffix = Path(uploaded_file.name).suffix.lower()
+if uploaded_file is not None:
+    file_suffix = Path(uploaded_file.name).suffix.lower()
 
-        try:
-            if file_suffix == ".csv":
-                df = pd.read_csv(uploaded_file, sep=';', encoding='latin1', skip_blank_lines=True)
-            elif file_suffix in [".xls", ".xlsx"]:
-                df = pd.read_excel(uploaded_file)
-            else:
-                st.warning(f"❌ Formato não reconhecido: {uploaded_file.name}")
-                continue
+    try:
+        if file_suffix in [".csv"]:
+            df = pd.read_csv(uploaded_file, sep=';', encoding='latin1', skiprows=8, low_memory=False)
+        elif file_suffix in [".xls", ".xlsx"]:
+            df = pd.read_excel(uploaded_file)
+        else:
+            st.error("❌ Formato de arquivo não suportado.")
+            st.stop()
+    except Exception as e:
+        st.error(f"Erro ao ler o arquivo: {e}")
+        st.stop()
 
-            # Substituir vírgula por ponto em todas as colunas numéricas
-            df = df.applymap(lambda x: str(x).replace(',', '.') if isinstance(x, str) else x)
+    st.success("✅ Arquivo carregado com sucesso!")
+    st.dataframe(df.head())
 
-            # Gerar novo arquivo CSV corrigido
-            output_name = uploaded_file.name.replace(" ", "_").replace(".CSV", "") + "_corrigido.csv"
-            df.to_csv(output_name, index=False)
-            with open(output_name, "rb") as f:
-                st.download_button(
-                    label=f"⬇️ Baixar arquivo corrigido: {output_name}",
-                    data=f,
-                    file_name=output_name,
-                    mime="text/csv"
-                )
-
-        except Exception as e:
-            st.error(f"Erro ao processar {uploaded_file.name}: {e}")
+    # Botão para download em CSV padronizado
+    csv_buffer = io.StringIO()
+    df.to_csv(csv_buffer, index=False, sep=';', encoding='utf-8')
+    st.download_button(
+        label="⬇️ Baixar arquivo corrigido (.csv)",
+        data=csv_buffer.getvalue(),
+        file_name=f"corrigido_{uploaded_file.name.replace(' ', '_')}.csv",
+        mime="text/csv"
+    )
