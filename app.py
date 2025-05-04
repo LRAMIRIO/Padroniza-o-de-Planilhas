@@ -8,21 +8,21 @@ st.set_page_config(page_title="Padronizador de Planilhas INMET", layout="centere
 st.title("📄 Padronizador de Planilhas INMET")
 st.write("Esse aplicativo permite carregar arquivos do INMET (.csv, .xls, .xlsx), padronizar colunas e corrigir problemas de codificação.")
 
-uploaded_file = st.file_uploader("🔼 Envie seu arquivo", type=["csv", "CSV", "xls", "xlsx"])
+uploaded_file = st.file_uploader("🔼 Envie seu arquivo", type=None)
 
 if uploaded_file is not None:
     file_suffix = Path(uploaded_file.name).suffix.lower()
 
     try:
-        if file_suffix in [".csv"]:
+        if file_suffix == ".csv":
             df = pd.read_csv(uploaded_file, sep=';', encoding='latin1', skiprows=8, low_memory=False)
         elif file_suffix in [".xls", ".xlsx"]:
             df = pd.read_excel(uploaded_file)
         else:
-            st.error("❌ Formato de arquivo não suportado.")
-            st.stop()
+            st.warning("⚠️ Tipo de arquivo não reconhecido. Tentando abrir como CSV com encoding padrão...")
+            df = pd.read_csv(uploaded_file, sep=';', encoding='latin1', skiprows=8, low_memory=False)
     except Exception as e:
-        st.error(f"Erro ao ler o arquivo: {e}")
+        st.error(f"❌ Erro ao ler o arquivo: {e}")
         st.stop()
 
     st.success("✅ Arquivo carregado com sucesso!")
