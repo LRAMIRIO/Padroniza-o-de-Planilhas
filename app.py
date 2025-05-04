@@ -3,41 +3,41 @@ import streamlit as st
 import pandas as pd
 import io
 
-st.set_page_config(page_title="Corrigir CSV INMET", layout="centered")
+st.title("🔧 Corrigir arquivos INMET para formato compatível")
 
-st.title("🔧 Corrigir arquivos CSV do INMET com cabeçalho inválido")
-st.markdown("""
-Este aplicativo remove ponto e vírgula desnecessário no cabeçalho dos arquivos `.CSV` do INMET que causam erro ao abrir no Excel ou em scripts.
-""")
-
-uploaded_files = st.file_uploader("📤 Envie um ou mais arquivos CSV para corrigir", type="csv", accept_multiple_files=True)
+uploaded_files = st.file_uploader(
+    "📂 Envie os arquivos INMET (qualquer formato)", accept_multiple_files=True
+)
 
 if uploaded_files:
-    for file in uploaded_files:
-        st.divider()
-        st.subheader(f"📁 Arquivo: {file.name}")
+    for uploaded_file in uploaded_files:
+        st.write(f"📥 Processando: {uploaded_file.name}")
 
-        # Lê as primeiras linhas do arquivo original
-        content = file.read().decode('latin1')
-        lines = content.splitlines()
+        # Detecta se é CSV ou Excel
+        file_suffix = Path(uploaded_file.name).suffix.lower()
 
-        # Remove ponto e vírgula extra ao final das linhas do cabeçalho (primeiras 8 linhas)
-        corrected_lines = []
-        for i, line in enumerate(lines):
-            if i < 8 and line.strip().endswith(';'):
-                corrected_lines.append(line.rstrip(';'))
+        try:
+            if file_suffix == ".csv":
+                df = pd.read_csv(uploaded_file, sep=';', encoding='latin1', skip_blank_lines=True)
+            elif file_suffix in [".xls", ".xlsx"]:
+                df = pd.read_excel(uploaded_file)
             else:
-                corrected_lines.append(line)
+                st.warning(f"❌ Formato não reconhecido: {uploaded_file.name}")
+                continue
 
-        # Junta o conteúdo corrigido
-        corrected_content = "\n".join(corrected_lines).encode('latin1')
-        corrected_filename = f"corrigido_{file.name}"
+            # Substituir vírgula por ponto em todas as colunas numéricas
+            df = df.applymap(lambda x: str(x).replace(',', '.') if isinstance(x, str) else x)
 
-        st.success("✅ Cabeçalho corrigido com sucesso!")
+            # Gerar novo arquivo CSV corrigido
+            output_name = uploaded_file.name.replace(" ", "_").replace(".CSV", "") + "_corrigido.csv"
+            df.to_csv(output_name, index=False)
+            with open(output_name, "rb") as f:
+                st.download_button(
+                    label=f"⬇️ Baixar arquivo corrigido: {output_name}",
+                    data=f,
+                    file_name=output_name,
+                    mime="text/csv"
+                )
 
-        st.download_button(
-            label="📥 Baixar arquivo corrigido",
-            data=corrected_content,
-            file_name=corrected_filename,
-            mime='text/csv'
-        )
+        except Exception as e:
+            st.error(f"Erro ao processar {uploaded_file.name}: {e}")
