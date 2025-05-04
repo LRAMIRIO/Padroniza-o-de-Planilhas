@@ -1,22 +1,14 @@
 
-# Conversor IBUTG
+# Corrigir Arquivos INMET para Formato Compatível com Streamlit
 
-Este app em Streamlit converte planilhas de dados meteorológicos do INMET para o formato compatível com o modelo IBUTG.
+Este aplicativo permite:
+- Enviar arquivos INMET nos formatos `.csv`, `.CSV`, `.xls`, `.xlsx`
+- Corrigir problemas de codificação, vírgulas como separador decimal e salvar como `.csv` padrão
 
-## Funcionalidades
+## Como rodar
+```bash
+streamlit run app.py
+```
 
-- Detecta automaticamente o fuso horário da cidade a partir da latitude/longitude no cabeçalho do CSV.
-- Filtra os dados entre 08:00 e 17:00 no horário local.
-- Preenche os dados na planilha de modelo IBUTG (colunas DATA, HORA, TAR, TPO, UR, VENTO).
-- Permite baixar os resultados em formato `.xlsx`.
-
-## Como usar
-
-1. Faça upload da planilha modelo `Modelo.xlsx`.
-2. Faça upload dos arquivos CSV do INMET.
-3. O sistema processa, converte e permite o download das planilhas formatadas.
-
-## Requisitos
-
-- Python 3.8+
-- Bibliotecas: streamlit, pandas, openpyxl, pytz, timezonefinder
+## Saída
+Um botão de download com o arquivo já corrigido.
