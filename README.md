@@ -1,17 +1,22 @@
 
-# Conversor de Planilhas para CSV
+# Conversor IBUTG
 
-Este aplicativo feito com Streamlit permite enviar arquivos `.xls`, `.xlsx` e `.csv` com codificações e separadores diferentes, e converte tudo para `.csv` padrão UTF-8, separado por vírgula.
+Este app em Streamlit converte planilhas de dados meteorológicos do INMET para o formato compatível com o modelo IBUTG.
 
 ## Funcionalidades
 
-- Aceita múltiplos arquivos simultaneamente
-- Corrige automaticamente `.csv` com encoding `latin1` e `;`
-- Permite download dos arquivos corrigidos
+- Detecta automaticamente o fuso horário da cidade a partir da latitude/longitude no cabeçalho do CSV.
+- Filtra os dados entre 08:00 e 17:00 no horário local.
+- Preenche os dados na planilha de modelo IBUTG (colunas DATA, HORA, TAR, TPO, UR, VENTO).
+- Permite baixar os resultados em formato `.xlsx`.
 
 ## Como usar
 
-1. Faça upload dos arquivos.
-2. Clique no botão de download para salvar os arquivos corrigidos.
+1. Faça upload da planilha modelo `Modelo.xlsx`.
+2. Faça upload dos arquivos CSV do INMET.
+3. O sistema processa, converte e permite o download das planilhas formatadas.
 
-Ideal para padronizar planilhas antes de análises em Python, R, etc.
+## Requisitos
+
+- Python 3.8+
+- Bibliotecas: streamlit, pandas, openpyxl, pytz, timezonefinder
