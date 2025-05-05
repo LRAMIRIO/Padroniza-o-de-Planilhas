@@ -1,56 +1,45 @@
 import streamlit as st
 import pandas as pd
-from io import StringIO
-from pathlib import Path
-import base64
+import io
+import zipfile
 import os
 
-st.set_page_config(page_title="Corretor de Arquivos CSV do INMET", layout="centered")
-st.title("🛠️ Corretor de Arquivos CSV do INMET")
-st.write("Este aplicativo corrige arquivos CSV do INMET com cabeçalhos inconsistentes e converte em arquivos limpos para análise.")
+st.set_page_config(page_title="Conversor de Extensão para CSV", layout="centered")
+st.title("📁 Conversor de Arquivos para .CSV")
+st.markdown("Faça upload de até **15 arquivos** `.csv`, `.xls` ou `.xlsx`. O conteúdo será mantido e convertido para `.csv`.")
 
-# Upload dos arquivos
-uploaded_files = st.file_uploader("📁 Envie os arquivos CSV ou Excel", accept_multiple_files=True, type=["csv", "CSV", "xls", "xlsx"])
+uploaded_files = st.file_uploader("Envie os arquivos", type=["csv", "xls", "xlsx"], accept_multiple_files=True)
 
-# Função para detectar separador
-def detectar_sep(linha):
-    if ';' in linha:
-        return ';'
-    elif ',' in linha:
-        return ','
-    else:
-        return ';'  # padrão
-
-# Processamento
 if uploaded_files:
+    os.makedirs("convertidos", exist_ok=True)
+
     for uploaded_file in uploaded_files:
-        st.markdown(f"---\n### 📄 Arquivo: `{uploaded_file.name}`")
         try:
-            content = uploaded_file.read().decode('latin1')
-            linhas = content.splitlines()
+            filename = uploaded_file.name
+            base_name = os.path.splitext(filename)[0]
+            ext = filename.split(".")[-1].lower()
+            output_path = f"convertidos/{base_name}.csv"
 
-            # Detectar separador na linha 9
-            sep = detectar_sep(linhas[8])
-            colunas = linhas[8].strip().split(sep)
-            dados = linhas[9:]
+            if ext == "csv":
+                with open(output_path, "wb") as f:
+                    f.write(uploaded_file.read())
+            elif ext in ["xls", "xlsx"]:
+                df = pd.read_excel(uploaded_file)
+                df.to_csv(output_path, index=False, sep=";", encoding="utf-8")
+            else:
+                st.error(f"❌ Tipo de arquivo não suportado: {filename}")
+                continue
 
-            # Recriar conteúdo limpo
-            csv_limpo = StringIO()
-            csv_limpo.write(sep.join(colunas) + '\n')
-            csv_limpo.write('\n'.join(dados))
-            csv_limpo.seek(0)
-
-            # Ler com pandas e exibir preview
-            df = pd.read_csv(csv_limpo, sep=sep)
-            st.success("Arquivo corrigido com sucesso!")
-            st.dataframe(df.head())
-
-            # Preparar para download
-            nome_saida = Path(uploaded_file.name).stem + "_corrigido.csv"
-            csv_corrigido = df.to_csv(index=False, sep=';').encode('utf-8')
-            b64 = base64.b64encode(csv_corrigido).decode()
-            href = f'<a href="data:file/csv;base64,{b64}" download="{nome_saida}">📥 Baixar arquivo corrigido</a>'
-            st.markdown(href, unsafe_allow_html=True)
+            st.success(f"✅ {filename} convertido com sucesso.")
 
         except Exception as e:
-            st.error(f"❌ Erro ao processar {uploaded_file.name}: {e}")
+            st.error(f"❌ Erro ao processar {filename}: {e}")
+
+    # Compactar
+    with zipfile.ZipFile("convertidos.zip", "w") as zipf:
+        for root, _, files in os.walk("convertidos"):
+            for file in files:
+                zipf.write(os.path.join(root, file), arcname=file)
+
+    with open("convertidos.zip", "rb") as f:
+        st.download_button("📦 Baixar Arquivos Convertidos (.zip)", f, file_name="convertidos.zip")
